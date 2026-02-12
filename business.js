@@ -9,14 +9,47 @@ async function allEmployees(){
 }
 
 /**
- * Returns true if value format is blank.
- * @param {string} value
+ * Checks whether a string value is null, undefined, or empty after trimming.
+ * @param {string} val
  * @returns {boolean}
  */
+
 function isBlank(val){
-    return val === null || value === undefined || value.trim().length === 0
+    return val === null || val === undefined || val.trim().length === 0
 }
 
+/**
+ * Validates ID format
+ * @param {string} id
+ * @param {string} prefix
+ * @returns {boolean}
+ */
+function isValidIdFormat(id, prefix) {
+    if (typeof id !== 'string') {
+        return false
+    }
+    if (id.length !== 4) {
+        return false
+    }
+    if (id.substring(0, 1) !== prefix) {
+        return false
+    }
+
+    let digits = id.substring(1)
+    let num = Number(digits)
+    if (Number.isNaN(num)) {
+        return false
+    }
+
+    return digits === String(num).padStart(3, '0')
+}
+
+/**
+ * Returns next valid employee ID based on existing latest ID
+ * @param {string} id
+ * @param {string} prefix
+ * @returns {boolean}
+ */
 function getNextEmployeeId(employees){
     let max = 0
 
@@ -30,6 +63,12 @@ function getNextEmployeeId(employees){
     return 'E' + String(max+1).padStart(3,'0')
 }
 
+/**
+ * Adds new employee to system after validating input
+ * @param {string} name
+ * @param {string} phone
+ * @returns {Promise<string>}
+ */
 async function addEmployee(name, phone) {
     if (isBlank(name)) {
         return 'Name entered is invalid'
@@ -41,7 +80,7 @@ async function addEmployee(name, phone) {
     }
 
     if (isBlank(phone)) {
-        return 'Phone number enteres id invalid'
+        return 'Phone number entered is invalid'
     }
     phone = phone.trim()
 
@@ -57,16 +96,47 @@ async function addEmployee(name, phone) {
     return 'Employee added!'
 }
 
-function shiftDuration(startTime, endTime) {
-    let startParts = startTime.split(':')
-    let endParts = endTime.split(':')
+/**
+ * Computes the duration of a work shift in hours as a real number.
+ *
+ * @function computeShiftDuration
+ * @param {string} startTime - The start time in "HH:MM" format (24-hour clock).
+ * @param {string} endTime - The end time in "HH:MM" format (24-hour clock).
+ * @returns {number} The duration of the shift in hours as a real number.
+ *
+ * @LLM Microsoft Copilot
+ * @Prompt "Generate a JavaScript function computeShiftDuration(startTime, endTime) 
+ *          which calculates how many hours (as a real number) are between the 
+ *          startTime and endTime. For example, if a shift starts at 11:00 and ends 
+ *          at 13:30 then the number of hours is 2.5."
+ */
+function computeShiftDuration(startTime, endTime) {
+  // Parse start time
+  const [startHour, startMinute] = startTime.split(":").map(Number);
+  const startTotalMinutes = startHour * 60 + startMinute;
 
-    let startMins = Number(startParts[0]) * 60 + Number(startParts[1])
-    let endMins = Number(endParts[0]) * 60 + Number(endParts[1])
+  // Parse end time
+  const [endHour, endMinute] = endTime.split(":").map(Number);
+  const endTotalMinutes = endHour * 60 + endMinute;
 
-    return (endMins - startMins) / 60
+  // Calculate duration in minutes
+  let durationMinutes = endTotalMinutes - startTotalMinutes;
+
+  // Handle overnight shifts (end time past midnight)
+  if (durationMinutes < 0) {
+    durationMinutes += 24 * 60;
+  }
+
+  // Convert minutes to hours
+  return durationMinutes / 60;
 }
 
+/**
+ * Determines whether assigning a shift would exceed the employee's maximum allowed daily working hours.
+ * @param {string} employeeId
+ * @param {Object} shiftId
+ * @returns {Promise<boolean>}
+ */
 async function isWithinDailyLimit(employeeId, shiftId) {
     let config = await persistence.loadConfig()
     let maxHours = config.maxDailyHours
@@ -74,18 +144,19 @@ async function isWithinDailyLimit(employeeId, shiftId) {
 
     let totalHours = 0
     for (let s of existingShifts) {
-        totalHours = totalHours + shiftDuration(s.startTime, s.endTime)
+        totalHours += computeShiftDuration(s.startTime, s.endTime)
     }
 
-    let newDuration = shiftDuration(shiftId.startTime, shiftId.endTime)
+    let newDuration = computeShiftDuration(shiftId.startTime, shiftId.endTime)
 
-    if (totalHours + newDuration > maxHours) {
-        return false
-    }
-
-    return true
+    return (totalHours + newDuration) <= maxHours
 }
 
+/**
+ * Validates whether an employee ID exists and has right format.
+ * @param {string} employeeId
+ * @returns {Promise<string>}
+ */
 async function validateEmployee(employeeId) {
     if (isBlank(employeeId)) {
         return 'Invalid employee ID'
@@ -105,6 +176,11 @@ async function validateEmployee(employeeId) {
     return ''
 }
 
+/**
+ * Validates whether a shift ID exists and has right format.
+ * @param {string} shiftId
+ * @returns {Promise<string>}
+ */
 async function validateShift(shiftId) {
     if (isBlank(shiftId)) {
         return 'Invalid shift ID'
@@ -124,22 +200,40 @@ async function validateShift(shiftId) {
     return ''
 }
 
+/**
+ * Checks whether an employee is already assigned to a given shift.
+ * @param {string} employeeId
+ * @param {string} shiftId
+ * @returns {Promise<string>}
+ */
 async function checkDuplicateAssignment(employeeId, shiftId) {
-    if (await persistence.assignment(employeeId, shiftId)) {
+    if (await persistence.addAssignment(employeeId, shiftId)) {
         return 'Employee already assigned to shift'
     }
     return ''
 }
 
+/**
+ * Verifies that assigning a shift will not exceed the employee’s daily maximum hour limit.
+ * @param {string} employeeId
+ * @param {string} shiftId 
+ * @returns {Promise<string>} 
+ */
 async function checkDailyLimit(employeeId, shiftId) {
     let shift = await persistence.findShift(shiftId)
-    let allowed = await isWithinDailyLimit(employeeId, shift)
+    let allowed = await isWithinDailyLimit(employeeId, shiftId)
     if (!allowed) {
         return 'Cannot assign shift to employee: daily hour limit would be exceeded'
     }
     return ''
 }
 
+/**
+ * Assigns an employee to a shift after performing all validations.
+ * @param {string} employeeId
+ * @param {string} shiftId 
+ * @returns {Promise<string>} 
+ */
 async function assignShift(employeeId, shiftId) {
     let empError = await validateEmployee(employeeId)
     if (empError.length > 0) {
@@ -168,6 +262,12 @@ async function assignShift(employeeId, shiftId) {
     return 'Shift Recorded'
 }
 
+/**
+ * Compares two shift records by date and start time.
+ * @param {Object} a
+ * @param {Object} b
+ * @returns {number} 
+ */
 function compareShifts(a, b) {
     if (a.date < b.date) return -1
     if (a.date > b.date) return 1
@@ -177,8 +277,8 @@ function compareShifts(a, b) {
 }
 
 /**
- * Uses bubble-sort to sort shift records by date then startTime.
- * @param {Array} records
+ * Sorts shifts in ascending order by date and start time using the bubble sort algorithm.
+ * @param {Array<Object>} records
  * @returns {void}
  */
 function sortShifts(records) {
@@ -211,7 +311,7 @@ async function getEmployeeSchedule(employeeId) {
     employeeId = employeeId.trim()
 
     let records = await persistence.findShiftsByEmployee(employeeId)
-    sortShiftRecords(records)
+    sortShifts(records)
 
     return { message: '', records: records }
 }
@@ -221,5 +321,5 @@ module.exports = {
     addEmployee,
     assignShift,
     getEmployeeSchedule,
-    shiftDuration
+    computeShiftDuration
 }
