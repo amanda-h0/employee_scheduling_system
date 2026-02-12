@@ -137,7 +137,7 @@ function computeShiftDuration(startTime, endTime) {
  * @param {Object} shiftId
  * @returns {Promise<boolean>}
  */
-async function isWithinDailyLimit(employeeId, shiftId) {
+async function isWithinDailyLimit(employeeId, shift) {
     let config = await persistence.loadConfig()
     let maxHours = config.maxDailyHours
     let existingShifts = await persistence.findShiftsByEmployeeAndDate(employeeId, shift.date)
@@ -147,7 +147,7 @@ async function isWithinDailyLimit(employeeId, shiftId) {
         totalHours += computeShiftDuration(s.startTime, s.endTime)
     }
 
-    let newDuration = computeShiftDuration(shiftId.startTime, shiftId.endTime)
+    let newDuration = computeShiftDuration(shift.startTime, shift.endTime)
 
     return (totalHours + newDuration) <= maxHours
 }
@@ -207,7 +207,7 @@ async function validateShift(shiftId) {
  * @returns {Promise<string>}
  */
 async function checkDuplicateAssignment(employeeId, shiftId) {
-    if (await persistence.addAssignment(employeeId, shiftId)) {
+    if (await persistence.assignmentExists(employeeId, shiftId)) {
         return 'Employee already assigned to shift'
     }
     return ''
@@ -221,8 +221,11 @@ async function checkDuplicateAssignment(employeeId, shiftId) {
  */
 async function checkDailyLimit(employeeId, shiftId) {
     let shift = await persistence.findShift(shiftId)
-    let allowed = await isWithinDailyLimit(employeeId, shiftId)
-    if (!allowed) {
+    if(!shift){
+        return 'Shift does not exist'
+    }
+    let allowed = await isWithinDailyLimit(employeeId, shift)
+    if(!allowed){
         return 'Cannot assign shift to employee: daily hour limit would be exceeded'
     }
     return ''
@@ -235,9 +238,9 @@ async function checkDailyLimit(employeeId, shiftId) {
  * @returns {Promise<string>} 
  */
 async function assignShift(employeeId, shiftId) {
-    let empError = await validateEmployee(employeeId)
-    if (empError.length > 0) {
-        return empError
+    let employeeError = await validateEmployee(employeeId)
+    if (employeeError.length > 0) {
+        return employeeError
     }
 
     let shiftError = await validateShift(shiftId)
