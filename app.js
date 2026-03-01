@@ -5,6 +5,12 @@ const bodyParser = require("body-parser")
 const app = express()
 app.use(bodyParser.urlencoded({extended: false}))
 
+/**
+ * Displays a list of all employees.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 app.get('/', async (req, res) => {
 
     let employees = await business.allEmployees()
@@ -24,6 +30,12 @@ app.get('/', async (req, res) => {
     res.send(result)
 })
 
+/**
+ * Shows details and shifts of a specific employee.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 app.get('/employee/:id', async (req, res) => {
 
     let id = req.params.id
@@ -71,6 +83,12 @@ app.get('/employee/:id', async (req, res) => {
     res.send(result)
 })
 
+/**
+ * Displays the edit form for an employee.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 app.get('/edit/:id', async (req, res) => {
 
     let id = req.params.id
@@ -95,6 +113,43 @@ app.get('/edit/:id', async (req, res) => {
     result += "</form>"
 
     res.send(result)
+})
+
+/**
+ * Handles the submission of edited employee details.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
+app.post('/edit/:id', async (req, res) => {
+
+    let id = req.params.id
+    let name = req.body.name
+    let phone = req.body.phone
+
+    if (name) {
+        name = name.trim()
+    }
+    if (phone) {
+        phone = phone.trim()
+    }
+
+    if (!name || name.length === 0){
+        return res.send('Name must not be empty.<br>' +
+            `<a href='/edit/${id}'>Back to Edit Details</a>`)
+    }
+    if (!/^\d{4}-\d{4}$/.test(phone)) {
+        return res.send('Phone must be in the following format: 4 digits. dash (-), 4 digits.' +
+            `<a href='/edit/${id}'>Back to Edit Details</a>`)
+    }
+
+    const db = await require('./persistence').connectDatabase()
+    await db.collection('employees').updateOne(
+        { employeeId: id},
+        {$set: {name: name, phone: phone}}
+    )
+
+    res.redirect('/')
 })
 
 app.listen(8000, () => {

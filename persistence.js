@@ -131,6 +131,7 @@ async function loadConfig() {
 }
 
 module.exports = {
+    connectDatabase,
     loadEmployees,
     addEmployee,
     findEmployee,
