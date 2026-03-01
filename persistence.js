@@ -78,8 +78,9 @@ async function findShiftsByEmployee(employeeId) {
     }
     
     let result = []
-    for (let s of shiftIds) {
-        let shift = await db.collection('shifts').findOne({s})
+
+    for (let a of assignments) { 
+        let shift = await db.collection('shifts').findOne({shiftId : a.shiftId})
         if (shift) {
             result.push({
                 date: shift.date,
@@ -108,7 +109,7 @@ async function findShiftsByEmployeeAndDate(employeeId, date) {
 
     let result = []
     for (let s of shiftIds) {
-        let shift = await db.collection('shifts').findOne({s, date})
+        let shift = await db.collection('shifts').findOne({shiftId : s, date})
         if (shift) {
             result.push({
                 date: shift.date,

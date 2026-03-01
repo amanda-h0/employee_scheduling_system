@@ -201,14 +201,14 @@ function sortShifts(records) {
 async function getEmployeeSchedule(employeeId) {
     let employeeVal = await validateEmployee(employeeId)
     if (employeeVal.length > 0) {
-        return { message: employeeVal, records: [] }
+        return { message: employeeVal, records: []}
     }
 
     employeeId = employeeId.trim()
 
     let records = await persistence.findShiftsByEmployee(employeeId)
     sortShifts(records)
-
+    
     return { message: '', records: records }
 }
 
