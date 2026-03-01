@@ -71,6 +71,32 @@ app.get('/employee/:id', async (req, res) => {
     res.send(result)
 })
 
+app.get('/edit/:id', async (req, res) => {
+
+    let id = req.params.id
+    let employees = await business.allEmployees()
+    let employee = null
+
+    for (let e of employees) {
+        if (e.employeeId === id) {
+            employee = e
+        }
+    }
+
+    if (!employee) {
+        return res.send("Employee not found")
+    }
+
+    let result = '<h1>Edit</h1>'
+    result += "<form method='POST' action='/edit/" + id + "'>"
+    result += "Name: <input type='text' name='name' value='" + employee.name + "'><br>"
+    result += "Phone: <input type='text' name='phone' value='" + employee.phone + "'><br>"
+    result += "<button type='submit'>Save</button>"
+    result += "</form>"
+
+    res.send(result)
+})
+
 app.listen(8000, () => {
     console.log("Server running on http://127.0.0.1:8000")
 })
