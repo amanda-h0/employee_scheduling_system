@@ -139,7 +139,7 @@ app.post('/edit/:id', async (req, res) => {
             `<a href='/edit/${id}'>Back to Edit Details</a>`)
     }
     if (!/^\d{4}-\d{4}$/.test(phone)) {
-        return res.send('Phone must be in the following format: 4 digits. dash (-), 4 digits.' +
+        return res.send('Phone must be in the following format: 4 digits. dash (-), 4 digits.<br>' +
             `<a href='/edit/${id}'>Back to Edit Details</a>`)
     }
 
