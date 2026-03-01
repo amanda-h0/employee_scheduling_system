@@ -1,7 +1,7 @@
 const persistence = require('./persistence')
 
 /**
- * Returns all employees
+ * Returns all employees.
  * @returns {Promise<Array>}
  */
 async function allEmployees(){
@@ -13,7 +13,6 @@ async function allEmployees(){
  * @param {string} val
  * @returns {boolean}
  */
-
 function isBlank(val){
     return val === null || val === undefined || val.trim().length === 0
 }
@@ -60,7 +59,7 @@ function getNextEmployeeId(employees){
         }
     }
 
-    return 'E' + String(max+1).padStart(3,'0')
+    return 'E' + String(max + 1).padStart(3,'0')
 }
 
 /**
@@ -135,7 +134,6 @@ function computeShiftDuration(startTime, endTime) {
   return durationMinutes / 60;
 }
 
-
 /**
  * Validates whether an employee ID exists and has right format.
  * @param {string} employeeId
@@ -159,7 +157,6 @@ async function validateEmployee(employeeId) {
 
     return ''
 }
-
 
 /**
  * Compares two shift records by date and start time.

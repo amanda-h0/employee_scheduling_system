@@ -11,6 +11,7 @@
     "start": "node restaurant"
   },
   "dependencies": {
+    "mongodb": "^7.1.0",
     "prompt-sync": "^4.2.0"
   }
 }
