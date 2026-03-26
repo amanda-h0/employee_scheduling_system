@@ -1,0 +1,22 @@
+Collections Changes:
+- shifts: will include employees array
+- employees: remove employeeId
+- assignments: will be removed
+
+Persistence Changes:
+- remove assignment-related functions
+- modify findEmployee, findShift to use _id
+- update shift queries to use embedded employees
+
+Business Logic Changes:
+- assigning shift now pushes ObjectId into shift
+- no more assignment collection
+
+Embedded Array Impact:
+- use $push and $pull
+- no joins required
+
+Risks:
+- ObjectId conversion errors
+- broken existing functions
+- duplicate employees in shifts
