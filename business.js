@@ -17,79 +17,19 @@ function isBlank(val){
     return val === null || val === undefined || val.trim().length === 0
 }
 
-/**
- * Validates ID format
- * @param {string} id
- * @param {string} prefix
- * @returns {boolean}
- */
-function isValidIdFormat(id, prefix) {
-    if (typeof id !== 'string') {
-        return false
-    }
-    if (id.length !== 4) {
-        return false
-    }
-    if (id.substring(0, 1) !== prefix) {
-        return false
-    }
 
-    let digits = id.substring(1)
-    let num = Number(digits)
-    if (Number.isNaN(num)) {
-        return false
-    }
-
-    return digits === String(num).padStart(3, '0')
-}
-
-/**
- * Returns next valid employee ID based on existing latest ID
- * @param {string} id
- * @param {string} prefix
- * @returns {boolean}
- */
-function getNextEmployeeId(employees){
-    let max = 0
-
-    for(let e of employees){
-        let num = Number(e.employeeId.substring(1))
-        if (!Number.isNaN(num) && num > max){
-            max = num
-        }
-    }
-
-    return 'E' + String(max + 1).padStart(3,'0')
-}
-
-/**
- * Adds new employee to system after validating input
- * @param {string} name
- * @param {string} phone
- * @returns {Promise<string>}
- */
 async function addEmployee(name, phone) {
     if (isBlank(name)) {
-        return 'Name entered is invalid'
-    }
-    name = name.trim()
-
-    if (name.length > 20) {
-        return 'Name too long (max 20 characters)'
+        return 'Enter valid name.'
     }
 
     if (isBlank(phone)) {
-        return 'Phone number entered is invalid'
+        return 'Enter valid phone number.'
     }
-    phone = phone.trim()
-
-    let employees = await persistence.loadEmployees()
-    let id = getNextEmployeeId(employees)
 
     await persistence.addEmployee({
-        employeeId: id,
-        name: name,
-        phone: phone
+        name,
+        phone
     })
 
     return 'Employee added!'
@@ -134,29 +74,6 @@ function computeShiftDuration(startTime, endTime) {
   return durationMinutes / 60;
 }
 
-/**
- * Validates whether an employee ID exists and has right format.
- * @param {string} employeeId
- * @returns {Promise<string>}
- */
-async function validateEmployee(employeeId) {
-    if (isBlank(employeeId)) {
-        return 'Invalid employee ID'
-    }
-
-    employeeId = employeeId.trim()
-
-    if (!isValidIdFormat(employeeId, 'E')) {
-        return 'Invalid employee ID'
-    }
-
-    let employee = await persistence.findEmployee(employeeId)
-    if (!employee) {
-        return 'Employee does not exist'
-    }
-
-    return ''
-}
 
 /**
  * Compares two shift records by date and start time.
@@ -199,17 +116,20 @@ function sortShifts(records) {
  * @returns {Promise<Object>}
  */
 async function getEmployeeSchedule(employeeId) {
-    let employeeVal = await validateEmployee(employeeId)
-    if (employeeVal.length > 0) {
-        return { message: employeeVal, records: []}
+    let shifts = await persistence.findShiftsByEmployee(employeeId)
+    let records = []
+
+    for (let s of shifts) {
+        records.push({
+            date: s.date,
+            startTime: s.startTime,
+            endTime: s.endTime
+        })
     }
 
-    employeeId = employeeId.trim()
-
-    let records = await persistence.findShiftsByEmployee(employeeId)
     sortShifts(records)
-    
-    return { message: '', records: records }
+
+    return {message: '', records}
 }
 
 module.exports = {
