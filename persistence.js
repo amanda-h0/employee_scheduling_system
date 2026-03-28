@@ -34,14 +34,16 @@ async function addEmployee(employee) {
     await db.collection('employees').insertOne(employee)
 }
 
+const { MongoClient, ObjectId } = require('mongodb')
+
 /**
- * Finds an employee by their ID.
+ * Finds an employee by their Object ID in mongo.
  * @param {string} employeeId
  * @returns {Promise<Object|undefined>}
  */
 async function findEmployee(employeeId) {
     const db = await connectDatabase()
-    return db.collection('employees').findOne({employeeId})
+    return db.collection('employees').findOne({_id: new ObjectId(id)})
 }
 
 /**
@@ -60,65 +62,13 @@ async function loadShifts() {
  */
 async function findShift(shiftId) {
     const db = await connectDatabase()
-    return db.collection('shifts').findOne({shiftId})
+    return db.collection('shifts').findOne({_id: new ObjectId(id)})
 }
 
-/**
- * Returns all shifts assigned to an employee.
- * @param {string} employeeId
- * @returns {Promise<Array>}
- */
 async function findShiftsByEmployee(employeeId) {
     const db = await connectDatabase()
-    let assignments = await db.collection('assignments').find({employeeId}).toArray()
 
-    let shiftIds = []
-    for (let a of assignments) {
-        shiftIds.push(a.shiftId)
-    }
-    
-    let result = []
-
-    for (let a of assignments) { 
-        let shift = await db.collection('shifts').findOne({shiftId : a.shiftId})
-        if (shift) {
-            result.push({
-                date: shift.date,
-                startTime: shift.startTime,
-                endTime: shift.endTime
-            })
-        }
-    }
-    return result
-}
-
-/**
- * Returns all shifts assigned to an employee on a specific date.
- * @param {string} employeeId
- * @param {string} date
- * @returns {Promise<Array>}
- */
-async function findShiftsByEmployeeAndDate(employeeId, date) {
-    const db = await connectDatabase()
-    let assignments = await db.collection('assignments').find({employeeId}).toArray()
-
-    let shiftIds = []
-    for (let a of assignments) {
-        shiftIds.push(a.shiftId)
-    }
-
-    let result = []
-    for (let s of shiftIds) {
-        let shift = await db.collection('shifts').findOne({shiftId : s, date})
-        if (shift) {
-            result.push({
-                date: shift.date,
-                startTime: shift.startTime,
-                endTime: shift.endTime
-            })
-        }
-    }
-    return result
+    return db.collection('shifts').find({employees: new ObjectId(employeeId)}).toArray()
 }
 
 /**
@@ -138,6 +88,5 @@ module.exports = {
     loadShifts,
     findShift,
     findShiftsByEmployee,
-    findShiftsByEmployeeAndDate,
     loadConfig
 }
