@@ -162,10 +162,20 @@ async function attemptLogin(username, password) {
     return sessionData
 }
 
+async function logAccess(username, url, method) {
+    await persistence.addLog({
+        timestamp: new Date(),
+        username: username || "guest",
+        url,
+        method
+    })
+}
+
 module.exports = {
     allEmployees,
     addEmployee,
     getEmployeeSchedule,
     computeShiftDuration,
-    attemptLogin
+    attemptLogin,
+    logAccess
 }

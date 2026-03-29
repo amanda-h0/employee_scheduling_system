@@ -6,6 +6,7 @@ const cookieParser = require('cookie-parser')
 
 const app = express()
 app.use(bodyParser.urlencoded({extended: false}))
+app.use(cookieParser())
 
 async function authMiddleware(req, res, next) {
     let sessionId = req.cookies.sessionId
@@ -39,7 +40,7 @@ async function logMiddleware(req, res, next) {
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
-app.get('/', async (req, res) => {
+app.get('/', authMiddleware, async (req, res) => {
 
     let employees = await business.allEmployees()
 
@@ -103,7 +104,7 @@ app.use(logMiddleware)
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
-app.get('/employee/:id', async (req, res) => {
+app.get('/employee/:id', authMiddleware, async (req, res) => {
 
     let id = req.params.id
     let schedule = await business.getEmployeeSchedule(id)
@@ -155,7 +156,7 @@ app.get('/employee/:id', async (req, res) => {
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
-app.get('/edit/:id', async (req, res) => {
+app.get('/edit/:id', authMiddleware, async (req, res) => {
 
     let id = req.params.id
     let employees = await business.allEmployees()
@@ -187,7 +188,7 @@ app.get('/edit/:id', async (req, res) => {
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
-app.post('/edit/:id', async (req, res) => {
+app.post('/edit/:id', authMiddleware, async (req, res) => {
 
     let id = req.params.id
     let name = req.body.name
