@@ -17,13 +17,16 @@ app.use(cookieParser())
  * @returns {Promise<void>}
  */
 async function authMiddleware(req, res, next) {
-    let sessionId = req.cookies.sessionId
+    if (req.path === '/login') {
+        return next()
+    }
 
-    if (!sessionId) {
+    if (!req.cookies || !req.cookies.sessionId) {
         return res.redirect('/login?msg=Please login')
     }
 
-    let session = await persistence.getSession(sessionId)
+    let sessionId = req.cookies.sessionId
+    let session = await persistence.getSession(sessionId)    
 
     if (!session || new Date(session.expiry) < new Date()) {
         return res.redirect('/login?msg=Session expired')
@@ -130,7 +133,7 @@ app.use(logMiddleware)
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
-app.get('/employee/:id', authMiddleware, async (req, res) => {
+app.get('/employee/:id', async (req, res) => {
 
     let id = req.params.id
     let schedule = await business.getEmployeeSchedule(id)
@@ -182,7 +185,7 @@ app.get('/employee/:id', authMiddleware, async (req, res) => {
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
-app.get('/edit/:id', authMiddleware, async (req, res) => {
+app.get('/edit/:id', async (req, res) => {
 
     let id = req.params.id
     let employees = await business.allEmployees()
@@ -214,8 +217,7 @@ app.get('/edit/:id', authMiddleware, async (req, res) => {
  * @param {import('express').Response} res
  * @returns {Promise<void>}
  */
-app.post('/edit/:id', authMiddleware, async (req, res) => {
-
+app.post('/edit/:id', async (req, res) => {
     let id = req.params.id
     let name = req.body.name
     let phone = req.body.phone

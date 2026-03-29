@@ -167,5 +167,6 @@ module.exports = {
     getSession,
     deleteSession,
     updateSessionExpiry,
+    addLog,
     loadConfig
 }
