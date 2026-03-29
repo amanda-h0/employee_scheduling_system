@@ -65,36 +65,67 @@ async function findShift(shiftId) {
     return db.collection('shifts').findOne({_id: new ObjectId(shiftId)})
 }
 
+/**
+ * Finds all shifts assigned to a specific employee.
+ * @param {string} employeeId - Employee ObjectId as string
+ * @returns {Promise<Array>} Array of shift objects
+ */
 async function findShiftsByEmployee(employeeId) {
     const db = await connectDatabase()
 
     return db.collection('shifts').find({employees: new ObjectId(employeeId)}).toArray()
 }
 
+/**
+ * Retrieves user login details by username.
+ * @param {string} username
+ * @returns {Promise<Object|undefined>} User document or undefined if not found
+ */
 async function getUserDetails(username) {
     const db = await connectDatabase()
 
     return db.collection('users').findOne({username})
 }
 
+/**
+ * Stores a new session in the database.
+ * @param {Object} sessionData - Session object containing key, expiry, and user data
+ * @returns {Promise<void>}
+ */
 async function startSession(sessionData) {
     const db = await connectDatabase()
 
     await db.collection('sessions').insertOne(sessionData)
 }
 
+/**
+ * Retrieves a session by its session key.
+ * @param {string} sessionId
+ * @returns {Promise<Object|undefined>} Session object or undefined if not found
+ */
 async function getSession(sessionId) {
     const db = await connectDatabase()
 
     return db.collection('sessions').findOne({key:sessionId})
 }
 
+/**
+ * Deletes a session from the database.
+ * @param {string} sessionId
+ * @returns {Promise<void>}
+ */
 async function deleteSession(sessionId) {
     const db = await connectDatabase()
 
     await db.collection('sessions').deleteOne({key:sessionId})
 }
 
+/**
+ * Updates the expiry time of an existing session.
+ * @param {string} sessionId
+ * @param {Date} newExpiry - New expiry timestamp
+ * @returns {Promise<void>}
+ */
 async function updateSessionExpiry(sessionId, newExpiry) {
     const db = await connectDatabase()
 
@@ -104,6 +135,11 @@ async function updateSessionExpiry(sessionId, newExpiry) {
     )
 }
 
+/**
+ * Adds a log entry to the security log collection.
+ * @param {Object} log - Log object containing timestamp, username, url, and method
+ * @returns {Promise<void>}
+ */
 async function addLog(log) {
     const db = await connectDatabase()
     await db.collection('security_log').insertOne(log)

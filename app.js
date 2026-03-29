@@ -8,6 +8,14 @@ const app = express()
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(cookieParser())
 
+/**
+ * Middleware to authenticate user sessions using cookies.
+ * Redirects to login if session is missing or expired.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ * @returns {Promise<void>}
+ */
 async function authMiddleware(req, res, next) {
     let sessionId = req.cookies.sessionId
 
@@ -29,6 +37,13 @@ async function authMiddleware(req, res, next) {
     next()
 }
 
+/**
+ * Middleware to log all incoming requests.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {import('express').NextFunction} next
+ * @returns {Promise<void>}
+ */
 async function logMiddleware(req, res, next) {
     await business.logAccess(req.user, req.url, req.method)
     next()
@@ -59,6 +74,11 @@ app.get('/', authMiddleware, async (req, res) => {
     res.send(result)
 })
 
+/**
+ * Displays the login page.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ */
 app.get('/login', (req, res) => {
 
     let message = req.query.msg || ''
@@ -79,6 +99,12 @@ app.get('/login', (req, res) => {
     res.send(result) 
 })
 
+/**
+ * Handles login form submission and creates a session.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 app.post('/login', async (req, res) => {
 
     let username = req.body.username
@@ -221,6 +247,12 @@ app.post('/edit/:id', authMiddleware, async (req, res) => {
     res.redirect('/')
 })
 
+/**
+ * Logs out the current user by deleting their session.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 app.get('/logout', async (req, res) => {
     let sessionId = req.cookies.sessionId
     

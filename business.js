@@ -18,7 +18,12 @@ function isBlank(val){
     return val === null || val === undefined || val.trim().length === 0
 }
 
-
+/**
+ * Adds a new employee after validating input fields.
+ * @param {string} name - Employee name
+ * @param {string} phone - Employee phone number
+ * @returns {Promise<string>} Result message indicating success or validation error
+ */
 async function addEmployee(name, phone) {
     if (isBlank(name)) {
         return 'Enter valid name.'
@@ -133,6 +138,12 @@ async function getEmployeeSchedule(employeeId) {
     return {message: '', records}
 }
 
+/**
+ * Attempts to authenticate a user and create a session.
+ * @param {string} username - The username entered
+ * @param {string} password - The plain text password entered
+ * @returns {Promise<Object|undefined>} Session object if successful, otherwise undefined
+ */
 async function attemptLogin(username, password) {
    let details = await persistence.getUserDetails(username)
 
@@ -162,6 +173,13 @@ async function attemptLogin(username, password) {
     return sessionData
 }
 
+/**
+ * Logs a user's access attempt including request details.
+ * @param {string} username - Username of the requester (or guest)
+ * @param {string} url - Requested URL
+ * @param {string} method - HTTP method (GET, POST, etc.)
+ * @returns {Promise<void>}
+ */
 async function logAccess(username, url, method) {
     await persistence.addLog({
         timestamp: new Date(),
