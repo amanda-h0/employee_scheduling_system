@@ -86,13 +86,13 @@ async function startSession(sessionData) {
 async function getSession(sessionId) {
     const db = await connectDatabase()
 
-    return db.collection('sessions').find({key:sessionId})
+    return db.collection('sessions').findOne({key:sessionId})
 }
 
 async function deleteSession(sessionId) {
     const db = await connectDatabase()
 
-    await db.collection('sessions').deleteOne(sessionData)
+    await db.collection('sessions').deleteOne({key:sessionId})
 }
 
 async function updateSessionExpiry(sessionId, newExpiry) {
@@ -102,6 +102,11 @@ async function updateSessionExpiry(sessionId, newExpiry) {
         {key:sessionId},
         {$set: {expiry: newExpiry}}
     )
+}
+
+async function addLog(log) {
+    const db = await connectDatabase()
+    await db.collection('security_log').insertOne(log)
 }
 
 /**

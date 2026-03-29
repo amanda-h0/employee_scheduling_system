@@ -1,9 +1,37 @@
 const express = require("express")
+const persistence = require("./persistence.js")
 const business = require("./business.js")
 const bodyParser = require("body-parser")
+const cookieParser = require('cookie-parser')
 
 const app = express()
 app.use(bodyParser.urlencoded({extended: false}))
+
+async function authMiddleware(req, res, next) {
+    let sessionId = req.cookies.sessionId
+
+    if (!sessionId) {
+        return res.redirect('/login?msg=Please login')
+    }
+
+    let session = await persistence.getSession(sessionId)
+
+    if (!session || new Date(session.expiry) < new Date()) {
+        return res.redirect('/login?msg=Session expired')
+    }
+
+    // extend session
+    let newExpiry = new Date(Date.now() + 1000*60*5)
+    await persistence.updateSessionExpiry(sessionId, newExpiry)
+
+    req.user = session.data.username
+    next()
+}
+
+async function logMiddleware(req, res, next) {
+    await business.logAccess(req.user, req.url, req.method)
+    next()
+}
 
 /**
  * Displays a list of all employees.
@@ -29,6 +57,45 @@ app.get('/', async (req, res) => {
     result += "</ul>"
     res.send(result)
 })
+
+app.get('/login', (req, res) => {
+
+    let message = req.query.msg || ''
+    let result = '<h1>Login</h1>'
+
+    if (message) {
+        result += "<p style='color:red'>" + message + "</p>"
+    }
+
+    result += `
+        <form method="POST" action="/login">
+            Username: <input name="username"><br>
+            Password: <input type="password" name="password"><br>
+            <button type="submit">Login</button>
+        </form>
+        `
+    
+    res.send(result) 
+})
+
+app.post('/login', async (req, res) => {
+
+    let username = req.body.username
+    let password = req.body.password
+
+    let session = await business.attemptLogin(username, password)
+
+    if (!session) {
+        return res.redirect('/login?msg=Invalid username or password')
+    }
+
+    res.cookie('sessionId', session.key)
+
+    res.redirect('/') 
+})
+
+app.use(authMiddleware)
+app.use(logMiddleware)
 
 /**
  * Shows details and shifts of a specific employee.
@@ -153,63 +220,6 @@ app.post('/edit/:id', async (req, res) => {
     res.redirect('/')
 })
 
-app.get('/login', (req, res) => {
-
-    let message = req.query.msg || ''
-    let result = '<h1>Login</h1>'
-
-    if (message) {
-        result += "<p style='color:red'>" + message + "</p>"
-    }
-
-    result += `
-        <form method="POST" action='/login">
-            Username: <input name="username"><br>
-            Password: <input type="password" name="password"><br>
-            <button type="submit">Login</button>
-        </form>
-        `
-    
-    res.send(result) 
-})
-
-app.post('/login', async (req, res) => {
-
-    let username = req.body.username
-    let password = req.body.password
-
-    let session = await business.attemptLogin(username, password)
-
-    if (!session) {
-        return res.redirect('/login?msg=Invalid username or password')
-    }
-
-    res.cookie('sessionId', session.key)
-
-    res.redirect('/') 
-})
-
-async function authMiddleware(req, res, next) {
-    let sessionId = req.cookiees.sessionId
-
-    if (!sessionId) {
-        return res.redirect('/login?msg=Please login')
-    }
-
-    let session = await persistence.getSession(sessionId)
-
-    if (!session || new Date(session.expiry) < new Date()) {
-        return res.redirect('/login?msg=Session expired')
-    }
-
-    // extend session
-    let newExpiry = new Date(Date.now() + 1000*60*5)
-    await persistence.updateSessionExpiry(sessionId, newExpiry)
-
-    req.user = session.data.username
-    next()
-}
-
 app.get('/logout', async (req, res) => {
     let sessionId = req.cookies.sessionId
     
@@ -218,8 +228,6 @@ app.get('/logout', async (req, res) => {
     res.clearCookie('sessionId')
     res.redirect('/login?msg=Logged out')
 })
-
-app.use(authMiddleware)
 
 /**
  * Starts the Express server on port 8000.
