@@ -20,7 +20,7 @@ app.get('/', async (req, res) => {
 
     for (let e of employees) {
         result += '<li>'
-        result += "<a href='/employee/" + e.employeeId + "'>"
+        result += "<a href='/employee/" + e._id + "'>"
         result += e.name
         result += "</a>"
         result += "</li>"
@@ -49,7 +49,7 @@ app.get('/employee/:id', async (req, res) => {
     let employee = null
 
     for (let e of employees) {
-        if (e.employeeId === id) {
+        if (String(e._id) === id) {
             employee = e
         }
     }
@@ -58,8 +58,7 @@ app.get('/employee/:id', async (req, res) => {
 
     result += '<p>Name: ' + employee.name + '</p>'
     result += '<p>Phone: ' + employee.phone + '</p>'
-    result += "<a href='/edit/" + employee.employeeId + "'>Edit Details</a>"
-
+    result += "<a href='/edit/" + employee._id + "'>Edit Details</a>"
     result += '<h2>Shifts</h2>'
     result += "<table border = '1'>"
     result += '<tr><th>Date</th><th>Start</th><th>End</th>'
@@ -96,7 +95,7 @@ app.get('/edit/:id', async (req, res) => {
     let employee = null
 
     for (let e of employees) {
-        if (e.employeeId === id) {
+        if (String(e._id) === id) {
             employee = e
         }
     }
@@ -106,7 +105,7 @@ app.get('/edit/:id', async (req, res) => {
     }
 
     let result = '<h1>Edit</h1>'
-    result += "<form method='POST' action='/edit/" + id + "'>"
+    result += "<form method='POST' action='/edit/" + employee._id + "'>"
     result += "Name: <input type='text' name='name' value='" + employee.name + "'><br>"
     result += "Phone: <input type='text' name='phone' value='" + employee.phone + "'><br>"
     result += "<button type='submit'>Save</button>"
@@ -143,10 +142,12 @@ app.post('/edit/:id', async (req, res) => {
             `<a href='/edit/${id}'>Back to Edit Details</a>`)
     }
 
-    const db = await require('./persistence').connectDatabase()
+    const {ObjectId} = require('mongodb')
+    const db = await require('./persistence.js').connectDatabase()
+
     await db.collection('employees').updateOne(
-        { employeeId: id},
-        {$set: {name: name, phone: phone}}
+        {_id: new ObjectId(id)},
+        {$set: {name, phone}}
     )
 
     res.redirect('/')

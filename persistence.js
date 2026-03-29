@@ -1,5 +1,5 @@
 const fs = require('fs/promises')
-const { MongoClient } = require('mongodb')
+const {MongoClient, ObjectId} = require('mongodb')
 
 let client = undefined
 
@@ -34,7 +34,7 @@ async function addEmployee(employee) {
     await db.collection('employees').insertOne(employee)
 }
 
-const { MongoClient, ObjectId } = require('mongodb')
+// let { MongoClient, ObjectId } = require('mongodb')
 
 /**
  * Finds an employee by their Object ID in mongo.
@@ -43,7 +43,7 @@ const { MongoClient, ObjectId } = require('mongodb')
  */
 async function findEmployee(employeeId) {
     const db = await connectDatabase()
-    return db.collection('employees').findOne({_id: new ObjectId(id)})
+    return db.collection('employees').findOne({_id: new ObjectId(employeeId)})
 }
 
 /**
@@ -62,7 +62,7 @@ async function loadShifts() {
  */
 async function findShift(shiftId) {
     const db = await connectDatabase()
-    return db.collection('shifts').findOne({_id: new ObjectId(id)})
+    return db.collection('shifts').findOne({_id: new ObjectId(shiftId)})
 }
 
 async function findShiftsByEmployee(employeeId) {
