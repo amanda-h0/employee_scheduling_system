@@ -1,4 +1,5 @@
 const persistence = require('./persistence')
+const crypto = require('crypto')
 
 /**
  * Returns all employees.
@@ -132,9 +133,39 @@ async function getEmployeeSchedule(employeeId) {
     return {message: '', records}
 }
 
+async function attemptLogin(username, password) {
+   let details = await persistence.getUserDetails(username)
+
+    if (!details) {
+        return undefined
+    }
+
+    let hasher = crypto.createHash('sha256')
+    hasher.update(password)
+    let hashedPass = hasher.digest('hex')
+
+    if (details.password !== hashedPass) {
+        return undefined
+    }
+  
+    let sessionKey = crypto.randomUUID()
+
+    let sessionData = {
+        key: sessionKey,
+        expiry: new Date(Date.now() + 1000*60*5),
+        data: {
+            username: details.username
+        }
+    }
+    await persistence.startSession(sessionData)
+
+    return sessionData
+}
+
 module.exports = {
     allEmployees,
     addEmployee,
     getEmployeeSchedule,
-    computeShiftDuration
+    computeShiftDuration,
+    attemptLogin
 }

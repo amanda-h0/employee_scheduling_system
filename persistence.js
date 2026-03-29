@@ -71,6 +71,39 @@ async function findShiftsByEmployee(employeeId) {
     return db.collection('shifts').find({employees: new ObjectId(employeeId)}).toArray()
 }
 
+async function getUserDetails(username) {
+    const db = await connectDatabase()
+
+    return db.collection('users').findOne({username})
+}
+
+async function startSession(sessionData) {
+    const db = await connectDatabase()
+
+    await db.collection('sessions').insertOne(sessionData)
+}
+
+async function getSession(sessionId) {
+    const db = await connectDatabase()
+
+    return db.collection('sessions').find({key:sessionId})
+}
+
+async function deleteSession(sessionId) {
+    const db = await connectDatabase()
+
+    await db.collection('sessions').deleteOne(sessionData)
+}
+
+async function updateSessionExpiry(sessionId, newExpiry) {
+    const db = await connectDatabase()
+
+    await db.collection('sessions').updateOne(
+        {key:sessionId},
+        {$set: {expiry: newExpiry}}
+    )
+}
+
 /**
  * Loads system configuration from config.json.
  * @returns {Promise<Object>}
@@ -88,5 +121,10 @@ module.exports = {
     loadShifts,
     findShift,
     findShiftsByEmployee,
+    getUserDetails,
+    startSession,
+    getSession,
+    deleteSession,
+    updateSessionExpiry,
     loadConfig
 }
