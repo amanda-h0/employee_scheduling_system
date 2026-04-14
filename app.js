@@ -179,6 +179,15 @@ app.get('/employee/:id', async (req, res) => {
 
     result += '<p>Name: ' + employee.name + '</p>'
     result += '<p>Phone: ' + employee.phone + '</p>'
+    result += `
+        <h2>Upload Employee Document (PDF only)</h2>
+
+        <form method="POST" action="/upload/${employee._id}" enctype="multipart/form-data">
+            <input type="file" name="file" accept="application/pdf" required>
+            <br><br>
+            <button type="submit">Upload PDF</button>
+        </form>
+    `
     result += "<a href='/edit/" + employee._id + "'>Edit Details</a>"
     result += '<h2>Shifts</h2>'
     result += "<table border = '1'>"
