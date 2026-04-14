@@ -113,15 +113,35 @@ app.post('/login', async (req, res) => {
     let username = req.body.username
     let password = req.body.password
 
-    let session = await business.attemptLogin(username, password)
+    let result = await business.attemptLogin(username, password)
 
-    if (!session) {
+    if (!result.success) {
         return res.redirect('/login?msg=Invalid username or password')
     }
 
-    res.cookie('sessionId', session.key)
+    // SHOW 2FA PAGE
+    return res.send(`
+        <h1>Enter 2FA Code</h1>
+        <form method="POST" action="/verify-2fa">
+            <input type="hidden" name="username" value="${result.username}">
+            Code: <input name="code"><br>
+            <button type="submit">Verify</button>
+        </form>
+    `) 
+})
 
-    res.redirect('/') 
+app.post('/verify-2fa', async (req, res) => {
+    let username = req.body.username
+    let code = req.body.code
+
+    let result = await business.verify2FA(username, code)
+
+    if (!result.success) {
+        return res.send(result.message)
+    }
+
+    res.cookie('sessionId', result.session.key)
+    res.redirect('/')
 })
 
 app.use(authMiddleware)

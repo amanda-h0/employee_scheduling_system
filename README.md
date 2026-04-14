@@ -3,9 +3,9 @@
 1. username: admin, password: admin123
 2. username: user, password: user123
 
-## 
 
 ## Notes:
 - Passwords are hashed using SHA256
 - Sessions expire after 5 minutes
 - MongoDB is the database used
+- JSON records on MongoDB were restored form Awwab
