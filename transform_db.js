@@ -1,6 +1,6 @@
 const { MongoClient } = require('mongodb')
 
-let client = new MongoClient('mongodb+srv://60306436:12class34@cluster0.xubu2x5.mongodb.net/')
+let client = new MongoClient('mongodb+srv://60306436:12class34@cluster0.kquxkkg.mongodb.net/')
 
 /**
  * Main function to execute database transformation steps.

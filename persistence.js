@@ -9,7 +9,7 @@ let client = undefined
  */
 async function connectDatabase() {
     if (!client){
-        client = new MongoClient('mongodb+srv://60306436:12class34@cluster0.xubu2x5.mongodb.net/')
+        client = new MongoClient('mongodb+srv://60306436:12class34@cluster0.kquxkkg.mongodb.net/')
         await client.connect()
     }
     return client.db('infs3201_winter2026')

@@ -3,10 +3,14 @@ const persistence = require("./persistence.js")
 const business = require("./business.js")
 const bodyParser = require("body-parser")
 const cookieParser = require('cookie-parser')
+const fileUpload = require('express-fileupload')
+const fs = require('fs')
+const path = require('path')
 
 const app = express()
 app.use(bodyParser.urlencoded({extended: false}))
 app.use(cookieParser())
+app.use(fileUpload())
 
 /**
  * Middleware to authenticate user sessions using cookies.
@@ -282,6 +286,38 @@ app.get('/logout', async (req, res) => {
 
     res.clearCookie('sessionId')
     res.redirect('/login?msg=Logged out')
+})
+
+app.post('/upload/:id', authMiddleware, async (req, res) => {
+
+    if (!req.files || !req.files.file) {
+        return res.send("No file uploaded")
+    }
+
+    let file = req.files.file
+
+    // check PDF
+    if (file.mimetype !== 'application/pdf') {
+        return res.send("Only PDF allowed")
+    }
+
+    // check size (2MB)
+    if (file.size > 2 * 1024 * 1024) {
+        return res.send("File too large (max 2MB)")
+    }
+
+    // limit 5 files
+    let files = fs.readdirSync('uploads')
+    if (files.length >= 5) {
+        return res.send("Max 5 files reached")
+    }
+
+    // save file
+    let filePath = path.join(__dirname, 'uploads', Date.now() + '-' + file.name)
+
+    await file.mv(filePath)
+
+    res.send("File uploaded successfully")
 })
 
 /**
