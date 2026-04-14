@@ -1,5 +1,6 @@
 const persistence = require('./persistence')
 const crypto = require('crypto')
+const { sendEmail } = require('./emailSystem')
 
 /**
  * Returns all employees.
@@ -145,32 +146,62 @@ async function getEmployeeSchedule(employeeId) {
  * @returns {Promise<Object|undefined>} Session object if successful, otherwise undefined
  */
 async function attemptLogin(username, password) {
-   let details = await persistence.getUserDetails(username)
+    let details = await persistence.getUserDetails(username)
 
     if (!details) {
-        return undefined
+        return { success: false }
     }
 
+    if (details.isLocked) {
+        return { success: false, message: "Account locked" }
+    }
+
+    // hash password
     let hasher = crypto.createHash('sha256')
     hasher.update(password)
     let hashedPass = hasher.digest('hex')
 
+    // WRONG PASSWORD
     if (details.password !== hashedPass) {
-        return undefined
-    }
-  
-    let sessionKey = crypto.randomUUID()
 
-    let sessionData = {
-        key: sessionKey,
-        expiry: new Date(Date.now() + 1000*60*5),
-        data: {
-            username: details.username
+        let attempts = (details.failedAttempts || 0) + 1
+
+        let updates = { failedAttempts: attempts }
+
+        // send warning email after 3 failed attempts
+        if (attempts === 3) {
+            sendEmail(details.username, "Suspicious Activity", "3 failed login attempts detected.")
         }
-    }
-    await persistence.startSession(sessionData)
 
-    return sessionData
+        // lock account after 10 failed attempts
+        if (attempts >= 10) {
+            updates.isLocked = true
+        }
+
+        await persistence.updateUser(username, updates)
+
+        return { success: false }
+    }
+
+    // CORRECT PASSWORD >>> GENERATE 2FA
+
+    let code = Math.floor(100000 + Math.random() * 900000).toString()
+
+    let expiry = new Date(Date.now() + 1000 * 60 * 3) // 3 mins
+
+    await persistence.updateUser(username, {
+        failedAttempts: 0,
+        twoFACode: code,
+        twoFAExpiry: expiry
+    })
+
+    sendEmail(details.username, "Your 2FA Code", "Code: " + code)
+
+    return {
+        success: true,
+        require2FA: true,
+        username: details.username
+    }
 }
 
 /**
@@ -189,11 +220,41 @@ async function logAccess(username, url, method) {
     })
 }
 
+async function verify2FA(username, code) {
+    let user = await persistence.getUserDetails(username)
+
+    if (!user) return null
+
+    if (new Date() > new Date(user.twoFAExpiry)) {
+        return { success: false, message: "Code expired" }
+    }
+
+    if (user.twoFACode !== code) {
+        return { success: false, message: "Invalid code" }
+    }
+
+    // create session
+    let sessionKey = crypto.randomUUID()
+
+    let sessionData = {
+        key: sessionKey,
+        expiry: new Date(Date.now() + 1000 * 60 * 5),
+        data: {
+            username: user.username
+        }
+    }
+
+    await persistence.startSession(sessionData)
+
+    return { success: true, session: sessionData }
+}
+
 module.exports = {
     allEmployees,
     addEmployee,
     getEmployeeSchedule,
     computeShiftDuration,
     attemptLogin,
-    logAccess
+    logAccess,
+    verify2FA
 }

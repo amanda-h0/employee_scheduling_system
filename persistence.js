@@ -154,6 +154,15 @@ async function loadConfig() {
     return JSON.parse(data)
 }
 
+async function updateUser(username, updates) {
+    const db = await connectDatabase()
+
+    await db.collection('users').updateOne(
+        { username },
+        { $set: updates }
+    )
+}
+
 module.exports = {
     connectDatabase,
     loadEmployees,
@@ -168,5 +177,6 @@ module.exports = {
     deleteSession,
     updateSessionExpiry,
     addLog,
-    loadConfig
+    loadConfig,
+    updateUser
 }
