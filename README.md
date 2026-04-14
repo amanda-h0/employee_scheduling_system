@@ -8,4 +8,4 @@
 - Passwords are hashed using SHA256
 - Sessions expire after 5 minutes
 - MongoDB is the database used
-- JSON records on MongoDB were restored form Awwab
+- JSON records (MongoDB) were restored form Awwab
