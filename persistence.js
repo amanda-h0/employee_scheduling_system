@@ -154,6 +154,18 @@ async function loadConfig() {
     return JSON.parse(data)
 }
 
+/**
+ * Updates a user's fields in the database.
+ *
+ * Used for:
+ * - tracking failed login attempts
+ * - locking accounts
+ * - storing 2FA codes and expiry
+ *
+ * @param {string} username - Username of the user
+ * @param {Object} updates - Fields to update in the user document
+ * @returns {Promise<void>}
+ */
 async function updateUser(username, updates) {
     const db = await connectDatabase()
 

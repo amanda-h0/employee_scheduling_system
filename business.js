@@ -220,6 +220,20 @@ async function logAccess(username, url, method) {
     })
 }
 
+/**
+ * Verifies a 2FA code and creates a session if valid.
+ *
+ * Checks:
+ * - User exists
+ * - Code is not expired
+ * - Code matches stored value
+ *
+ * If valid, creates a session and returns it.
+ *
+ * @param {string} username - Username of the user
+ * @param {string} code - 6-digit 2FA code entered by user
+ * @returns {Promise<Object>} Result object with success flag and session data
+ */
 async function verify2FA(username, code) {
     let user = await persistence.getUserDetails(username)
 

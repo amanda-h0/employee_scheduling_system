@@ -9,3 +9,4 @@
 - Sessions expire after 5 minutes
 - MongoDB is the database used
 - JSON records (MongoDB) were restored form Awwab
+- JSDoc for documentation generated using ChatGPT

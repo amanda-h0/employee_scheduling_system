@@ -134,6 +134,14 @@ app.post('/login', async (req, res) => {
     `) 
 })
 
+/**
+ * Handles submission of the 2FA verification code.
+ * Validates the code and creates a session if successful.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 app.post('/verify-2fa', async (req, res) => {
     let username = req.body.username
     let code = req.body.code
@@ -297,6 +305,16 @@ app.get('/logout', async (req, res) => {
     res.redirect('/login?msg=Logged out')
 })
 
+/**
+ * Uploads a PDF document for a specific employee.
+ * Only authenticated users can upload files.
+ * Files must be PDF and under 2MB.
+ * Maximum of 5 files allowed in the uploads folder.
+ *
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @returns {Promise<void>}
+ */
 app.post('/upload/:id', authMiddleware, async (req, res) => {
 
     if (!req.files || !req.files.file) {
